@@ -1,23 +1,26 @@
 import tkinter
 from tkinter import Grid, Text, ttk, scrolledtext
 from typing import Literal
+from contextlib import suppress
+from tkinter.messagebox import showinfo
+from saveSys import *
 
 """
 Made by Trent Struve
 For the 2026-27 TSA software development competition
 Wish me luck!
-V0.3
+V0.4
 inspired by Anki
 """
 
 
 #constants for the window size specifications
-VERSION="0.3"
+VERSION="0.4"
 VERSION_STAGE="pre-alpha"
 WIDTH=750
-LENGTH=500
+LENGTH=520
 MINWIDTH=750
-MINLENGTH=500
+MINLENGTH=520
 MAXWIDTH=WIDTH
 MAXLENGTH=LENGTH
 
@@ -79,6 +82,7 @@ class testEntry:
     entry = None
     label = None
     contents = None
+
     def __init__(self, original):
         self.entry = Text(root, height=10, wrap='word', width=25)
         self.entry.grid(column = 1, row = 1, columnspan=1)
@@ -90,13 +94,17 @@ class testEntry:
 
     def testEntryEnd(self, original):
         contents = (self.entry.get("1.0", "end-1c")) # pyright: ignore[reportOptionalMemberAccess]
-        print(type(self.entry)) # pyright: ignore[reportOptionalMemberAccess]
         if contents != "":
             self.entry.destroy() # pyright: ignore[reportOptionalMemberAccess]
             self.label.destroy() # pyright: ignore[reportOptionalMemberAccess]
             self.contents = contents
-            print(contents)
             tkinter.Button.configure(original, state='disabled', text="ACCEPTED")
+            saveCard(formatCard("New Card", self.contents))
+            showinfo("NEW CARD", self.contents)
+            tkinter.Button.configure(original, state='normal', text="Create New Card", command=lambda: testEntry(original))
+
+
+
 
 #   experimental segment, I want to see the boundaries of each cell.
 #   doesn't work.
@@ -112,18 +120,19 @@ root = initRoot()
 sideFrame = ttk.Frame(root, border=3, relief='ridge')
 sideFrame.grid(column=0, row=0, sticky='w', rowspan=3)
 
-frameChildren = []
+testEntries = []
 BUTTON_MAP ={
-            0: ["Create New Card", lambda: testEntry(testEntryButton)],
+            0: ["Create New Card", lambda: testEntries.append(testEntry(testEntryButton))],
             1: ["Debug Print Children", lambda: list(map(print, tkinter.Tk.winfo_children(root)))],
             2: ["Debug Grid", lambda: debugGrid],
-            3: ["Button 4", lambda: print("option 4")],
+            3: ["Delete all Cards", lambda: removeFile(1)],
             4: ["QUIT", lambda: root.quit()]
             }
 
 
  #creates the side menu and returns the keepNums's corresponding buttons
-testEntryButton = menu(BUTTON_MAP, sideFrame, [0])[0]
+mainMenuButtons = menu(BUTTON_MAP, sideFrame, [0])
+testEntryButton = mainMenuButtons[0]
 
             
 root.mainloop()
