@@ -9,7 +9,7 @@ from saveSys import *
 Made by Trent Struve
 For the 2026-27 TSA software development competition
 Wish me luck!
-V0.4
+V0.5
 inspired by Anki
 """
 
@@ -21,8 +21,8 @@ WIDTH=750
 LENGTH=520
 MINWIDTH=750
 MINLENGTH=520
-MAXWIDTH=WIDTH
-MAXLENGTH=LENGTH
+MAXWIDTH=int(WIDTH*1.5)
+MAXLENGTH=int(LENGTH*1.5)
 
 
 
@@ -72,35 +72,75 @@ def initRoot():
     mainGroup = "group1"
     # num-1 because typical index rules; 0 = 1
     root.columnconfigure(8-1,pad=15, uniform=mainGroup, weight=1, minsize=250)
-    root.rowconfigure(12-1, pad=30, uniform=mainGroup, weight= 2, minsize=20)
+    root.rowconfigure(16-1, pad=5, uniform=mainGroup, weight=2, minsize=20)
     
     return root
+
+root = initRoot()
 
 class testEntry:
     """Handles the test entry stuff. Saves the contents AFTER deletion, I might want to change that later.
     Access these contents directly from the instance's 'contents' attribute."""
-    entry = None
-    label = None
-    contents = None
+
+    frame = tkinter.Frame(root)
+    name = {}
+    body = {}
+    answer = {}
+    sections = {}
 
     def __init__(self, original):
-        self.entry = Text(root, height=10, wrap='word', width=25)
-        self.entry.grid(column = 1, row = 1, columnspan=1)
-        self.label = tkinter.Label(root, text="Enter your card content:")
-        self.label.grid(column = 1, row = 0)
-            
+        self.frame = tkinter.Frame(root)
+        self.name = {
+            "label": tkinter.Label(self.frame, text="Enter your card name:"),
+            "entry": Text(self.frame, height=1, wrap='word', width=25),
+            "contents": str,
+        }
+        self.body = {
+            "label": tkinter.Label(self.frame, height=2, text="Enter your card body:"),
+            "entry": Text(self.frame, height=4, wrap='word', width=25, undo=True),
+            "contents": str,
+        }
+        self.answer = {
+            "label": tkinter.Label(self.frame, height=2, text="Enter your card answer:"),
+            "entry": Text(self.frame, height=3, wrap='word', width=25, undo=True),
+            "contents": str,
+        }
+        self.sections = {
+            "name": self.name,
+            "body": self.body,
+            "answer": self.answer,
+        }
+        
+        self.frame.grid(column=1, columnspan=2, row=0, rowspan=3)
+        
+        self.sections["name"]["label"].grid(column = 0, row = 0)
+        self.sections["name"]["entry"].grid(column = 0, row = 1)
+        
+        self.sections["body"]["label"].grid(column = 0, row = 2)
+        self.sections["body"]["entry"].grid(column = 0, row = 3)
+        
+        self.sections["answer"]["label"].grid(column = 0, row = 4)
+        self.sections["answer"]["entry"].grid(column = 0, row = 5)
+        
+        
+
         
         tkinter.Button.configure(original, text="ACCEPT", command=lambda: self.testEntryEnd(original))
 
     def testEntryEnd(self, original):
-        contents = (self.entry.get("1.0", "end-1c")) # pyright: ignore[reportOptionalMemberAccess]
-        if contents != "":
-            self.entry.destroy() # pyright: ignore[reportOptionalMemberAccess]
-            self.label.destroy() # pyright: ignore[reportOptionalMemberAccess]
-            self.contents = contents
+        grabContents = lambda self: Text.get(self, "1.0", "end-1c")
+        nameContents = (grabContents(self.sections["name"]["entry"])) # pyright: ignore[reportOptionalMemberAccess]
+        bodyContents = (grabContents(self.sections["body"]["entry"])) # pyright: ignore[reportOptionalMemberAccess]
+        answerContents = (grabContents(self.sections["answer"]["entry"])) # pyright: ignore[reportOptionalMemberAccess]
+
+        if nameContents != "" and bodyContents != "" and answerContents != "":
+            #tried a for loop to destroy, just returned strings that I can't do anything with.
+            #sue me. I can just obliterate the frame, anyway, now that I think about it.
+            self.frame.destroy()
+            
             tkinter.Button.configure(original, state='disabled', text="ACCEPTED")
-            saveCard(formatCard("New Card", self.contents))
-            showinfo("NEW CARD", self.contents)
+            saveCard(nameContents, bodyContents, answerContents)
+            #showinfo("NEW CARD", )
             tkinter.Button.configure(original, state='normal', text="Create New Card", command=lambda: testEntry(original))
 
 
@@ -116,7 +156,6 @@ def debugGrid():
     
     
  
-root = initRoot()
 sideFrame = ttk.Frame(root, border=3, relief='ridge')
 sideFrame.grid(column=0, row=0, sticky='w', rowspan=3)
 
@@ -125,7 +164,7 @@ BUTTON_MAP ={
             0: ["Create New Card", lambda: testEntries.append(testEntry(testEntryButton))],
             1: ["Debug Print Children", lambda: list(map(print, tkinter.Tk.winfo_children(root)))],
             2: ["Debug Grid", lambda: debugGrid],
-            3: ["Delete all Cards", lambda: removeFile(1)],
+            3: ["Delete all Cards", lambda: clearCards()],
             4: ["QUIT", lambda: root.quit()]
             }
 
